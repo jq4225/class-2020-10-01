@@ -49,11 +49,54 @@ Let's continue working with the same enrollment data as Tuesday.  Recall the [of
 
 **Prompt:** Create a tibble named `classes` which includes the data from all five years in a "tidy" format. In addition to the variables produced by `read_enrollemnt()`, your tibble should include a variable named `year`.
 
+```{r}
+path = "raw_data/class_enrollment_summary_by_term_12.20.19.xlsx"
+
+d_2019 <- read_enrollment(path) %>%
+  mutate(year = 2019)
+d_2018 <- read_enrollment(file = "raw_data/class_enrollment_summary_by_term_10.24.18.xlsx", skip_lines = 2) %>%
+  mutate(year = 2018)
+d_2017 <- read_enrollment(file = "raw_data/class_enrollment_summary_by_term_10.20.17.xlsx", skip_lines = 3) %>%
+  mutate(year = 2017)
+d_2016 <- read_enrollment(file = "raw_data/class_enrollment_summary_by_term_fall_2016.xlsx", skip_lines = 0) %>%
+  mutate(year = 2016)
+d_2015 <- read_enrollment(file = "raw_data/class_enrollment_summary_by_term_fall_2015.xlsx", skip_lines = 3) %>%
+  mutate(year = 2015)
+
+classes <- bind_rows(d_2019, d_2018, d_2017, d_2016, d_2015)
+classes <- as_tibble(classes)
+```
+
+
 
 
 ### Scene 2
 
 **Prompt:** Write a function called `big_classes()` whose first argument `x` requires a tibble, formatted like `classes`. It should return a tibble with the 5 highest enrollment classes in `x`. Once everyone in your group has that working, add a function argument called `my_year` which allows the user to pick a year for which she wants to know the biggest 5 courses.
+
+```{r}
+big_classes <- function(x, my_year) {
+  stopifnot(is_tibble(x))
+  stopifnot(is.numeric(my_year))
+  
+  x %>%
+    arrange(desc(u_grad)) %>%
+    filter(year == my_year) %>%
+    slice(1:5)
+}
+
+big_classes(d_2019, 2019)
+```
+```{r}
+big_classes2 <- function(x) {
+  stopifnot(is_tibble(x))
+  x %>%
+    arrange(desc(u_grad)) %>%
+    slice(1:5)
+}
+
+big_classes2(classes)
+```
 
 
 
@@ -69,6 +112,15 @@ Let's continue working with the same enrollment data as Tuesday.  Recall the [of
 * You now have a tibble with two columns: `year` and `q_enrollment`. Add another column called `mean_25_75` which is the average of the 25th and 75th percentiles. (You should look at `?quantile` to determine which elements in the list these are.) 
 
 
+```{r}
+classes2 <- classes %>%
+  group_by(year) %>%
+  select(year, u_grad) %>%
+  summarize(q_enrollment = list(quantile(u_grad)), .groups = "drop") %>%
+  mutate(mean_25_75 = map_dbl(q_enrollment, ~mean(c(.[2], .[4]))))
+
+classes2
+```
 
 
 ### Scene 4
@@ -76,6 +128,16 @@ Let's continue working with the same enrollment data as Tuesday.  Recall the [of
 **Prompt:** The current version of the chapter does not mention `group_nest()`, which is a brand new function in **dplyr** package. Examine it by typing `?group_nest`. Read the help page. Play with the examples.  Note how `group_nest()` creates a new tibble with just the grouping variable and a new column, called `data` which is a list-column containing a tibble of all the relevant data. This is confusing, but powerful. Using `classes`, make a new tibble, named `plots` which has three columns: `year`, `data` and `my_plot`. 
 
 Each row in `my_plot` should be a histogram of the enrollment data for that year. Once you have created the object `plots`. Use `plot_grid()` from the **cowplot** package --- which you probably need to install --- to print out all the plots at once.
+
+```{r}
+plots <- classes2 %>%
+  group_by(year) %>%
+  group_nest() %>%
+  mutate(my_plot = hist(data))
+
+ggplot(data = plots, aes(x = data)) + geom_histogram()
+  
+```
 
 
 
