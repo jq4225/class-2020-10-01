@@ -1,0 +1,12 @@
+name: recitation
+title: recitation
+username:
+account: jq4225
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2928402
+bundleId: 3693174
+url: https://jq4225.shinyapps.io/recitation/
+when: 1601589348.94278
+asMultiple: FALSE
+asStatic: FALSE
